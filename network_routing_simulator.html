@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Dynamic Network Routing Simulator</title>
+<style>
+  :root{
+    --bg:#0d1520;
+    --panel:#141f30;
+    --panel2:#182640;
+    --accent:#4fd1e8;
+    --accent2:#7ee0c3;
+    --text:#e8edf5;
+    --muted:#8ea0bd;
+    --border:#233350;
+    --danger:#ff6b6b;
+    --ok:#4ade80;
+    --warn:#f5a83f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:0; max-width:480px; margin:0 auto;
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    padding:20px 18px 14px; text-align:center;
+    background:linear-gradient(160deg,#152238,#0d1520);
+    border-bottom:1px solid var(--border);
+  }
+  header h1{margin:0 0 4px; font-size:17px; letter-spacing:.3px;}
+  header p{margin:0; color:var(--muted); font-size:12px;}
+  .badges{display:flex; gap:6px; justify-content:center; margin-top:10px; flex-wrap:wrap;}
+  .badge{
+    font-size:10.5px; padding:4px 9px; border-radius:20px;
+    background:var(--panel2); color:var(--accent2); border:1px solid var(--border);
+  }
+  main{padding:16px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:16px; margin-bottom:14px;
+  }
+  .card h2{
+    font-size:13px; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--accent2); margin:0 0 12px;
+  }
+  .net-wrap{
+    background:#0a1220; border:1px solid var(--border); border-radius:10px;
+    padding:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+  button{
+    -webkit-appearance:none; border:none; cursor:pointer;
+    font-family:inherit; font-weight:600;
+  }
+  .btn-primary{
+    width:100%; padding:12px; border-radius:9px; background:var(--accent);
+    color:#02222c; font-size:14px; margin-top:10px;
+  }
+  .btn-primary:active{transform:scale(.98);}
+  .btn-row{display:flex; gap:8px; margin-top:8px;}
+  .btn-row button{flex:1;}
+  .btn-secondary{
+    padding:10px; border-radius:9px; background:var(--panel2); color:var(--text);
+    font-size:12.5px; border:1px solid var(--border);
+  }
+  .btn-danger{color:var(--danger); border-color:rgba(255,107,107,.3);}
+  select{
+    width:100%; padding:10px; border-radius:9px; border:1px solid var(--border);
+    background:#0f1929; color:var(--text); font-size:13px; margin-bottom:8px;
+  }
+  table.route-table{width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;}
+  table.route-table th{
+    background:var(--panel2); color:var(--accent2); text-align:center; padding:6px;
+    font-size:10.5px; text-transform:uppercase;
+  }
+  table.route-table td{padding:7px 6px; border-bottom:1px solid var(--border); text-align:center;}
+  table.route-table tr:last-child td{border-bottom:none;}
+  .result-banner{
+    text-align:center; padding:14px; border-radius:12px; margin-top:10px;
+    background:radial-gradient(circle at 50% 0%, #163049, #0f1929); border:1px solid var(--border);
+  }
+  .result-banner .path{font-size:18px; font-weight:700; color:var(--accent2); font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .result-banner .cost{font-size:12px; color:var(--muted); margin-top:4px;}
+  .status-pill{
+    display:inline-block; font-size:10px; padding:3px 9px; border-radius:10px; font-weight:700; margin-top:8px;
+  }
+  .status-up{background:rgba(74,222,128,.15); color:var(--ok);}
+  .status-down{background:rgba(255,107,107,.15); color:var(--danger);}
+  pre.code{
+    background:#0a1220; border:1px solid var(--border); border-radius:10px;
+    padding:12px; font-size:11px; line-height:1.55; overflow-x:auto;
+    font-family:ui-monospace,Menlo,Consolas,monospace; color:#c9d6ea;
+  }
+  .kw{color:#f5a83f;} .tp{color:#7ee0c3;} .cm{color:#5b7291;} .str{color:#c9a5f0;} .fn{color:#4fd1e8;}
+  .toggle-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .pill-btn{
+    font-size:11px; padding:5px 10px; border-radius:8px; background:var(--panel2);
+    color:var(--accent2); border:1px solid var(--border);
+  }
+  .protocol-item{padding:10px 0; border-bottom:1px solid var(--border);}
+  .protocol-item:last-child{border-bottom:none;}
+  .protocol-item .pname{font-weight:700; color:var(--accent2); font-size:13px;}
+  .protocol-item .pdesc{font-size:12px; color:var(--muted); margin-top:2px;}
+  .arch-flow{display:flex; flex-direction:column; align-items:center; gap:0;}
+  .arch-node{
+    background:var(--panel2); border:1px solid var(--border); border-radius:9px;
+    padding:9px 20px; font-size:12.5px; font-weight:700; color:var(--text); text-align:center; width:100%;
+  }
+  .arch-arrow{color:var(--accent); font-size:15px; padding:2px 0;}
+  .app-list{list-style:none; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:6px;}
+  .app-list li{
+    font-size:11.5px; padding:6px 10px; border-radius:8px; background:var(--panel2);
+    color:var(--text); border:1px solid var(--border);
+  }
+  footer{
+    text-align:center; padding:18px 16px 26px; font-size:11px; color:var(--muted);
+    border-top:1px solid var(--border);
+  }
+  footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Dynamic Network Routing Simulator</h1>
+  <p>Advanced Computer Networks &amp; Mobile Computing &nbsp;•&nbsp; GSSIPU Semester 7</p>
+  <div class="badges">
+    <span class="badge">Network Simulation & Routing Optimization</span>
+    <span class="badge">Advanced</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="card">
+    <h2>▸ Network Topology</h2>
+    <div class="net-wrap">
+      <svg id="netSvg" viewBox="0 0 320 260" width="100%" style="min-width:300px;">
+        <g id="edges" stroke="#3a4a6e" stroke-width="2">
+          <line id="edge-AB" x1="70" y1="60" x2="250" y2="60"/>
+          <line id="edge-AC" x1="70" y1="60" x2="70" y2="200"/>
+          <line id="edge-BD" x1="250" y1="60" x2="250" y2="200"/>
+          <line id="edge-CD" x1="70" y1="200" x2="250" y2="200"/>
+        </g>
+        <g id="edge-labels" fill="#8ea0bd" font-size="12" font-family="ui-monospace,Menlo,Consolas,monospace">
+          <text x="160" y="50" text-anchor="middle">2</text>
+          <text x="50" y="130" text-anchor="middle">4</text>
+          <text x="270" y="130" text-anchor="middle">3</text>
+          <text x="160" y="220" text-anchor="middle">1</text>
+        </g>
+        <g id="nodes">
+          <circle id="node-A" cx="70" cy="60" r="22" fill="#182640" stroke="#4fd1e8" stroke-width="2.5"/>
+          <text x="70" y="65" text-anchor="middle" fill="#e8edf5" font-size="14" font-weight="700">R-A</text>
+
+          <circle id="node-B" cx="250" cy="60" r="22" fill="#182640" stroke="#4fd1e8" stroke-width="2.5"/>
+          <text x="250" y="65" text-anchor="middle" fill="#e8edf5" font-size="14" font-weight="700">R-B</text>
+
+          <circle id="node-C" cx="70" cy="200" r="22" fill="#182640" stroke="#4fd1e8" stroke-width="2.5"/>
+          <text x="70" y="205" text-anchor="middle" fill="#e8edf5" font-size="14" font-weight="700">R-C</text>
+
+          <circle id="node-D" cx="250" cy="200" r="22" fill="#182640" stroke="#4fd1e8" stroke-width="2.5"/>
+          <text x="250" y="205" text-anchor="middle" fill="#e8edf5" font-size="14" font-weight="700">R-D</text>
+        </g>
+      </svg>
+    </div>
+
+    <label style="font-size:11.5px; color:var(--muted); display:block; margin:10px 0 4px;">Simulate router failure</label>
+    <select id="failSelect">
+      <option value="none">No failure — all routers up</option>
+      <option value="B">Router B fails</option>
+      <option value="C">Router C fails</option>
+    </select>
+
+    <button class="btn-primary" id="findRouteBtn">Find Shortest Path (A → D)</button>
+
+    <div class="result-banner" id="resultBanner" style="display:none;">
+      <div class="path" id="resultPath">A → C → D</div>
+      <div class="cost" id="resultCost">Total Cost = 5</div>
+      <span class="status-pill" id="resultStatus"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>▸ Routing Table (from Router A)</h2>
+    <table class="route-table" id="routeTable">
+      <tr><th>Destination</th><th>Next Hop</th><th>Cost</th></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>▸ Routing Protocols</h2>
+    <div class="protocol-item">
+      <div class="pname">RIP — Routing Information Protocol</div>
+      <div class="pdesc">Uses hop count to determine the best route.</div>
+    </div>
+    <div class="protocol-item">
+      <div class="pname">OSPF — Open Shortest Path First</div>
+      <div class="pdesc">Uses a shortest-path algorithm based on link cost.</div>
+    </div>
+    <div class="protocol-item">
+      <div class="pname">BGP — Border Gateway Protocol</div>
+      <div class="pdesc">Used to route traffic across the Internet between autonomous systems.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>▸ System Architecture</h2>
+    <div class="arch-flow">
+      <div class="arch-node">NETWORK NODES</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-node">ROUTING ENGINE</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-node">PATH CALCULATOR</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-node">ROUTING TABLE</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-node">PACKET TRANSMISSION</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="toggle-row">
+      <h2 style="margin:0;">▸ Python Source Code</h2>
+      <button class="pill-btn" id="toggleCodeBtn">Show</button>
+    </div>
+    <div id="codeBox" style="display:none;">
+<pre class="code">graph = {
+    <span class="str">'A'</span>: {<span class="str">'B'</span>: 2, <span class="str">'C'</span>: 4},
+    <span class="str">'B'</span>: {<span class="str">'A'</span>: 2, <span class="str">'D'</span>: 3},
+    <span class="str">'C'</span>: {<span class="str">'A'</span>: 4, <span class="str">'D'</span>: 1},
+    <span class="str">'D'</span>: {<span class="str">'B'</span>: 3, <span class="str">'C'</span>: 1}
+}
+
+<span class="kw">def</span> <span class="fn">show_routes</span>():
+    <span class="kw">for</span> node <span class="kw">in</span> graph:
+        <span class="fn">print</span>(node, <span class="str">"->"</span>, graph[node])
+
+show_routes()
+
+<span class="cm"># Output:</span>
+<span class="cm"># A -> {'B': 2, 'C': 4}</span>
+<span class="cm"># B -> {'A': 2, 'D': 3}</span>
+<span class="cm"># C -> {'A': 4, 'D': 1}</span>
+<span class="cm"># D -> {'B': 3, 'C': 1}</span></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>▸ Applications</h2>
+    <ul class="app-list">
+      <li>Internet Service Providers</li>
+      <li>Data Centers</li>
+      <li>Telecommunications</li>
+      <li>Cloud Computing</li>
+      <li>Enterprise Networks</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer>
+  Dynamic Network Routing Simulator — Advanced Networks Mini Project<br>
+  GSSIPU Semester 7 · Mayank Swaraj<br>
+  <a href="https://github.com/mayankswaraj18cr-cmd" target="_blank">GitHub</a> ·
+  <a href="https://linkedin.com/in/mayank-swaraj-4b84b6410" target="_blank">LinkedIn</a>
+</footer>
+
+<script>
+// Graph: A,B,C,D with weighted edges (mirrors the Python dict)
+const baseGraph = {
+  A: { B: 2, C: 4 },
+  B: { A: 2, D: 3 },
+  C: { A: 4, D: 1 },
+  D: { B: 3, C: 1 },
+};
+
+function dijkstra(graph, source, target){
+  const dist = {}; const prev = {}; const visited = {};
+  Object.keys(graph).forEach(n => dist[n] = Infinity);
+  dist[source] = 0;
+  const nodes = new Set(Object.keys(graph));
+
+  while(nodes.size){
+    let u = null;
+    nodes.forEach(n => { if(u === null || dist[n] < dist[u]) u = n; });
+    if(dist[u] === Infinity) break;
+    nodes.delete(u);
+    visited[u] = true;
+
+    Object.entries(graph[u] || {}).forEach(([v, w]) => {
+      if(nodes.has(v) && dist[u] + w < dist[v]){
+        dist[v] = dist[u] + w;
+        prev[v] = u;
+      }
+    });
+  }
+
+  if(dist[target] === Infinity) return null;
+  const path = [];
+  let cur = target;
+  while(cur){
+    path.unshift(cur);
+    cur = prev[cur];
+  }
+  return { path, cost: dist[target], dist, prev };
+}
+
+function buildGraphWithFailure(failedNode){
+  if(failedNode === 'none') return JSON.parse(JSON.stringify(baseGraph));
+  const g = JSON.parse(JSON.stringify(baseGraph));
+  delete g[failedNode];
+  Object.keys(g).forEach(n => { delete g[n][failedNode]; });
+  return g;
+}
+
+function updateNetVisual(failedNode){
+  ['A','B','C','D'].forEach(n => {
+    const circle = document.getElementById(`node-${n}`);
+    if(n === failedNode){
+      circle.setAttribute('fill', 'rgba(255,107,107,.15)');
+      circle.setAttribute('stroke', '#ff6b6b');
+    } else {
+      circle.setAttribute('fill', '#182640');
+      circle.setAttribute('stroke', '#4fd1e8');
+    }
+  });
+  const edgeMap = { AB: ['A','B'], AC: ['A','C'], BD: ['B','D'], CD: ['C','D'] };
+  Object.entries(edgeMap).forEach(([key, [a,b]]) => {
+    const line = document.getElementById(`edge-${key}`);
+    const broken = (a === failedNode || b === failedNode);
+    line.setAttribute('stroke', broken ? '#4a2020' : '#3a4a6e');
+    line.setAttribute('stroke-dasharray', broken ? '5,4' : 'none');
+  });
+}
+
+function renderRouteTable(graph, source){
+  const table = document.getElementById('routeTable');
+  table.innerHTML = '<tr><th>Destination</th><th>Next Hop</th><th>Cost</th></tr>';
+  ['B','C','D'].forEach(dest => {
+    if(!graph[dest] && dest !== source){
+      table.innerHTML += `<tr><td>Router ${dest}</td><td colspan="2" style="color:#ff6b6b;">Unreachable</td></tr>`;
+      return;
+    }
+    const result = dijkstra(graph, source, dest);
+    if(!result){
+      table.innerHTML += `<tr><td>Router ${dest}</td><td colspan="2" style="color:#ff6b6b;">Unreachable</td></tr>`;
+    } else {
+      const nextHop = result.path.length > 1 ? result.path[1] : dest;
+      table.innerHTML += `<tr><td>Router ${dest}</td><td>${nextHop}</td><td>${result.cost}</td></tr>`;
+    }
+  });
+}
+
+document.getElementById('findRouteBtn').addEventListener('click', () => {
+  const failedNode = document.getElementById('failSelect').value;
+  updateNetVisual(failedNode);
+  const graph = buildGraphWithFailure(failedNode);
+  const banner = document.getElementById('resultBanner');
+  const statusEl = document.getElementById('resultStatus');
+
+  if(!graph['A']){
+    banner.style.display = 'block';
+    document.getElementById('resultPath').textContent = 'No route available';
+    document.getElementById('resultCost').textContent = 'Source router A is down';
+    statusEl.textContent = 'NETWORK DOWN';
+    statusEl.className = 'status-pill status-down';
+    renderRouteTable(graph, 'A');
+    return;
+  }
+
+  const result = dijkstra(graph, 'A', 'D');
+  banner.style.display = 'block';
+  if(!result){
+    document.getElementById('resultPath').textContent = 'A → D: No path found';
+    document.getElementById('resultCost').textContent = 'Destination unreachable';
+    statusEl.textContent = 'ROUTE FAILED';
+    statusEl.className = 'status-pill status-down';
+  } else {
+    document.getElementById('resultPath').textContent = result.path.join(' → ');
+    document.getElementById('resultCost').textContent = `Total Cost = ${result.cost}`;
+    statusEl.textContent = failedNode === 'none' ? 'OPTIMAL ROUTE' : 'REROUTED (FAILOVER)';
+    statusEl.className = 'status-pill status-up';
+  }
+  renderRouteTable(graph, 'A');
+});
+
+document.getElementById('toggleCodeBtn').addEventListener('click', () => {
+  const box = document.getElementById('codeBox');
+  const btn = document.getElementById('toggleCodeBtn');
+  const show = box.style.display === 'none';
+  box.style.display = show ? 'block' : 'none';
+  btn.textContent = show ? 'Hide' : 'Show';
+});
+
+// init
+renderRouteTable(baseGraph, 'A');
+</script>
+
+</body>
+</html>
