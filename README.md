@@ -18,6 +18,7 @@ The project is intentionally self-contained. The main demonstration is a single 
 - Expandable Python graph example for connecting the visual demo to the underlying data model
 - Explanations of RIP, OSPF, and BGP routing concepts
 - Browser-based demo with no build step or dependency installation
+- Python routing engine for reusable shortest-path calculations
 - Supporting research paper and presentation for background and project context
 
 ## How It Works
@@ -48,7 +49,8 @@ The interface presents the result as a path, total cost, and status indicator. I
 ```
 .
 ├── network_routing_simulator.html  # Interactive routing simulator demo
-├── src/                            # Source code for future extracted modules
+├── src/
+│   └── routing_simulator.py        # Python routing engine and CLI
 ├── assets/                         # Images and other static assets
 ├── docs/
 │   ├── Network_Routing_Simulator_Research_Paper.pdf
@@ -75,6 +77,17 @@ python3 -m http.server 8000
 
 Then visit `http://localhost:8000/network_routing_simulator.html`.
 
+### Run the Python Routing Engine
+
+The Python implementation uses only the standard library. Run it from the repository root:
+
+```bash
+python3 src/routing_simulator.py
+python3 src/routing_simulator.py --failed B
+```
+
+The first command calculates the optimal route from A to D. The second removes Router B and demonstrates failover through the remaining topology. You can also provide custom endpoints with `--source` and `--target`.
+
 ## Using the Demo
 
 1. Review the network topology and the cost shown on each link.
@@ -91,10 +104,11 @@ The layout is designed for a narrow, mobile-friendly viewport and can also be op
 - **Presentation:** HTML and inline CSS provide the interface, topology drawing, tables, controls, and responsive styling.
 - **Visualization:** The network diagram uses inline SVG elements for routers, links, labels, and route highlighting.
 - **Interaction:** JavaScript handles failure selection, route calculation, result rendering, routing-table updates, and the source-code toggle.
-- **Data model:** The topology is represented as an adjacency structure with numeric link costs.
+- **Data model:** The topology is represented as an adjacency structure with numeric link costs in both the browser demo and `src/routing_simulator.py`.
+- **Python implementation:** The routing engine uses Dijkstra's algorithm with a priority queue, returns immutable route results, and exposes routing-table data for reuse in tests or other interfaces.
 - **Documentation:** The `docs/` directory contains the supporting research paper and project presentation.
 
-There is currently no build pipeline or dependency lockfile. The `src/` directory is reserved for a future refactor if the inline demo is split into separate modules.
+There is currently no build pipeline, dependency lockfile, or third-party Python dependency. The browser demo remains self-contained, while the Python module provides a testable foundation for future services or command-line workflows.
 
 ## Documentation
 
